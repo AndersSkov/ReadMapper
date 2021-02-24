@@ -4,7 +4,7 @@ const char* createSuffixArray(char const *input[]);
 
 int main(int argc, char const argv[])
 {
-    / code /
+    /* code */
     char input[] = "mississippi$";
     const char suffix = createSuffixArray(input);
 
