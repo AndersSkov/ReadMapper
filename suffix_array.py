@@ -43,9 +43,9 @@ def skew(input):
         
 
 """
-    SA-IS algorithm
+    SA-IS implementation of suffix array creation
 """
-def SA_IS(input):
+def sa_is(input):
     
 
     return 42
