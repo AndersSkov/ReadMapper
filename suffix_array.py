@@ -46,6 +46,34 @@ def skew(input):
     SA-IS algorithm
 """
 def SA_IS(input):
-    
 
+    # First up we determine the classes for every char in the input.
+    classes = determineClasses(input)
+
+    
     return 42
+
+def determineClasses(input):
+
+    L = ord("L")
+    S = ord("S")
+
+    # create empty list to fill with L and S
+    ret = bytearray(len(input))
+
+    #the last char $ is always S
+    ret[-1] = S
+
+    # the second to last char will always be L since everything is larger than $
+    ret[-2] = L
+
+    # Step through the rest from right to left
+    for i in range(len(input)-2, -1, -1):
+        if input[i] > input[i+1]:
+            ret[i] = L
+        elif input[i] == input[i+1] and ret[i+1] == L:
+            ret[i] = L
+        else:
+            ret[i] = S
+
+    return ret

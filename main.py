@@ -15,3 +15,6 @@ inverse = bwt.naive(input)
 print("naive implementation of bwt_inverse")
 bwt.naive_inverse(inverse)
 
+print("SA-IS")
+sa.SA_IS(input)
+
