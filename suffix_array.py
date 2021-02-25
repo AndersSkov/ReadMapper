@@ -1,3 +1,5 @@
+import numpy as np
+
 """
     Naive implementation of suffix array creation
 """
@@ -45,13 +47,22 @@ def skew(input):
 """
     SA-IS algorithm
 """
+
+
 def SA_IS(input):
 
     # First up we determine the classes for every char in the input.
     classes = determineClasses(input)
+    # print(classes)
 
-    
+    # next up we will find the bucketsize
+    bucketSizes = findBucketSizes(input)
+    print(bucketSizes)
+
     return 42
+
+
+
 
 def determineClasses(input):
 
@@ -77,3 +88,15 @@ def determineClasses(input):
             ret[i] = S
 
     return ret
+
+def findBucketSizes(input, alphabetSize = 256):
+    # create a 0 list for the given alphabet size
+    # if no size is entered 256 is used as the full range for all characters available from a byte.
+    ret = np.zeros(alphabetSize)
+
+    for char in input:
+        encode = ord(char)
+        ret[encode] += 1
+
+    print(input)
+    return ret[ret != 0]
