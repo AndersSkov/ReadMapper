@@ -1,6 +1,8 @@
 """
     Naive implementation of suffix array creation
 """
+
+
 def naive(input):
     # create all suffixes of input, and sort to array
     suffixes = []
@@ -23,9 +25,12 @@ def naive(input):
 
     return suffix_array
 
+
 """
     Skew implementation of suffix array creation
 """
+
+
 def skew(input):
     # create suffixes of input for idx % 3 != 0
     suffixes_12 = []
@@ -38,14 +43,12 @@ def skew(input):
     print(suffixes_12)
     
     # sort by prefix triplet in linear time, using radix sort
-    
-    
         
 
 """
     SA-IS implementation of suffix array creation
 """
-def sa_is(input):
-    
 
+
+def sa_is(input):
     return 42
