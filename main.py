@@ -1,8 +1,10 @@
 import suffix_array as sa
-import bwt 
+import bwt
+import approx as app
 
-input = "baabaabac$"
+input = b'mississippi$'
 # baabaabac$
+edits =  ""
 
 print("naive implementation of suffix array")
 sa.naive(input)
@@ -17,7 +19,9 @@ sa.naive(input)
 #bwt.naive_inverse(inverse)
 
 print("SA-IS")
-sa.SA_IS(input, 256)
+SA = sa.SA_IS(input, 256)
+print(SA)
+
 
 
 def read_fasta_file(filename):

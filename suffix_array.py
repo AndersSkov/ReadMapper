@@ -87,7 +87,6 @@ def SA_IS(input, alphabetSize):
     induceSortL(input, result, bucketSizes, classes, letters)
     induceSortS(input, result, bucketSizes, classes, letters)
 
-    print("REUSLT:", result)
     return result
 
 
@@ -158,8 +157,7 @@ def findBucketSizesAndLetters(input, alphabetSize = 256):
     ret = np.zeros(alphabetSize)
     letters = []
     for char in input:
-        encode = ord(char)
-        ret[encode] += 1
+        ret[char] += 1
         if(letters.count(char) == 0):
             letters.append(char)
 
@@ -209,6 +207,7 @@ def guessLMSsort(input, bucketSize, classes, letters):
 
     return SA
 
+
 # for each suffix in our guessed SA we check the suffix to the left in the original input, if it's L-type we bucket sort.
 # we scan from left to right
 def induceSortL(input, guessedSA, bucketSizes, classes, letters):
@@ -221,6 +220,7 @@ def induceSortL(input, guessedSA, bucketSizes, classes, letters):
 
         # we look at the suffix to the left
         left = guessedSA[i]-1
+
         if left < 0:
             continue
 
@@ -234,6 +234,7 @@ def induceSortL(input, guessedSA, bucketSizes, classes, letters):
         # we now add the start position at the head of the bucket, and move the tail pointer one up
         guessedSA[heads[index]] = left
         heads[index] += 1
+
 
 # we now scan from right to left
 # basically a reversed version of the previous function
@@ -327,9 +328,8 @@ def sumSA(sumString, sumAlphabetSize):
 
     else:
         # recursive
-        print(sumString)
+        print("REKRUSION")
         summarySA = SA_IS(sumString, sumAlphabetSize)
-
 
     return summarySA
 
@@ -338,20 +338,20 @@ def sumSA(sumString, sumAlphabetSize):
 # we again place LMS suffixes in with bucket sort, but this time not at random. We use the order determined by the summarySA
 def accLMSsort(input, bucketSizes, summarySA, sumOffset, letters):
 
-    sufOff = [-1]* len(input)
+    sufOff = [-1] * len(input)
 
     tails = bucketTails(bucketSizes)
 
-    for i in range(len(summarySA)-1, 0,-1):
+    for i in range(len(summarySA)-1, 0, -1):
+
         inputIndex = sumOffset[summarySA[i]]
 
-        character = input[inputIndex]
-        index = letters.index(character)
-        sufOff[tails[index]] = inputIndex
+        bIndex = input[inputIndex]
+        index = letters.index(bIndex)
 
+        sufOff[(tails[index]-1)] = inputIndex
         tails[index] -= 1
 
-    sufOff.append(sufOff.pop(0))
-
+    sufOff[0] = (len(input)-1)
     return sufOff
 
