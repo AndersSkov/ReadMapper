@@ -21,8 +21,6 @@ def naive(input):
         suffix_array.append(idx)
 
     print("suffixes\n", suffixes)
-    print("suffix array\n", suffix_array)
-
     return suffix_array
 
 """
@@ -41,7 +39,7 @@ def skew(input):
     
     # sort by prefix triplet in linear time, using radix sort
     
-    
+
 
 
 
@@ -327,8 +325,9 @@ def sumSA(sumString, sumAlphabetSize):
             summarySA[j+1] = i
 
     else:
+        # the summary string is too complex
+        # there is at least one letter used more than once, so we can't just bucket sort it, since we don't know where it will go then.
         # recursive
-        print("REKRUSION")
         summarySA = SA_IS(sumString, sumAlphabetSize)
 
     return summarySA
