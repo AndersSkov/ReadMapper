@@ -2,37 +2,36 @@ import suffix_array as sa
 import bwt
 import approx as app
 
-input = b'googol$'
+input = b"mississippi$"
 # baabaabac$
 # gatgcgagagatg$
-input_search = "lol"
-
-edits = "AACTTTCTGAA"
-testString1 = "TTAAAAAATTTCT-AACAACA"
-testString2 = "TGGAAAA-TTTCTGGAATGGAT"
-
-test = b'gatgcgagagatg$'
-test_search = "gaga"
+# googol$
+input_search = "sippi"
 
 
-#print("naive implementation of suffix array")
+ExactSearch = False
+
+
 sa.naive(input)
 
-#print("SA-IS")
 SA = sa.SA_IS(input, 256)
 print("SA-IS\n", SA)
 
-#print("skew implementation of suffix array")
-#sa.skew(input)
+# Det er temmeligt dumt at bruge en O(n² log n) algoritme
+# her, når I jo har et suffix array. Lad være med det!
+# Har I tested at I kan bygge BWT fra SA? (og faktisk behøver
+# I ikke eksplicit lave BWT hvis I har SA, for I kan få den
+# direkte fra SA).
+# our_bwt = bwt.naive(input)
 
-#print("naive implementation of bwt")
-our_bwt = bwt.naive(input.decode())
-rev_bwt = bwt.naive(input.decode()[::-1])
+our_bwt = bwt.bwtFromSA(input, SA)
 print("BWT\n", our_bwt)
-print("BWT of REV INPUT\n", rev_bwt)
 
-#print("naive implementation of bwt_inverse")
-#bwt.naive_inverse(inverse)
+if not ExactSearch:
+    # Pas på her! I smidder sentinel i starten af strengen, og det må I ikke.
+    # Den skal altid være til sidst.
+    rev_bwt = bwt.naive(input[-2::-1].decode() + '$')
+    print("BWT of REV INPUT\n", rev_bwt)
 
 
 c = bwt.c_tabel(input)
@@ -40,18 +39,39 @@ print("C TABLE \n", c)
 
 
 o = bwt.o_table(list(c.keys()), our_bwt)
-ro = bwt.o_table(list(c.keys()), rev_bwt)
 print("O TABLE\n", o)
-print("RO TABLE\n", ro)
 
-print("EXACT SEARCH")
-i1, i2 = bwt.bwt_search(c, o, input_search)
-for i in range(i1, i2):
-    print(SA[i])
 
-print("APPROX SEARCH")
-d = app.d_table(input_search, c, ro, SA)
-print("D TABLE\n", d)
+if not ExactSearch:
+    ro = bwt.o_table(list(c.keys()), rev_bwt)
+    # print("RO TABLE\n", ro)
+
+
+if ExactSearch:
+    print("EXACT SEARCH")
+    print(f"Searching for {input_search} in {input}")
+    i1, i2 = bwt.bwt_search(c, o, input_search)
+    for i in range(i1, i2):
+        print(i, SA[i], input[SA[i]:])
+else:
+    print("APPROX SEARCH")
+    print(f"Searching for {input_search} in {input}")
+    d = app.d_table(input_search, c, ro, SA)
+    print("D TABLE\n", d)
+    L, R = 0, len(input) # brug et åbent interval.
+    i = len(d)-1
+    edits = 1
+    result = app.recApproxSearch(input_search, i, edits, L, R, d, c, o, list(c.keys()), [])
+    for L, R in result:
+        for i in range(L, R):
+            print(i, SA[i], input[SA[i]:])
+    print(result)
+
+    cigars = app.cigar(result, input, input_search, SA, edits)
+    print("CIGARS\n", cigars)
+
+
+
 
 
 def read_fasta_file(filename):

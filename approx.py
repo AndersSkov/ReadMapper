@@ -1,68 +1,89 @@
-import bwt
 import numpy as np
+import difflib
+
 # We want to implement the BWT approx search also known as the Li-Durbin algorithm since it allows
 # one to terminate the search early by creating an additional table called the D table.
 # D table has a minimum number of edits, you need to match the rest of the string, and if the number of edits
 # is below this, the recursion stops.
 # We will be searching from beginning to end in the SA of the reversed string and searching for the reversed pattern
 
-def li_durbin(input, pattern, SA, c_table, ro_table):
-    D = d_table(pattern, c_table, ro_table, SA)
+# Det Union pjat kommer ikke til at virke, fordi det er intervaller og ikke indeks
+# I samler sammen. Så jeg har givet funktionen en liste som parameter, og så smider
+# jeg intervaller i den.
+def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, res):
+    # Vi skal tjekke i < 0 før vi tjekker D[i]. Hvis
+    # i er negative får vi ikke en fejl i opslaget, men
+    # vi får den forkerte værdi.
+    if i < 0:
+        if R > L and edits >= 0:
+            # I kan ikke returnerer lister af [L, R] når i laver en union. Det er jo
+            # intervaller I skal have styr på, så det er vigtigt hvad der er L og hvad
+            # der er R!
+            if (L, R) not in res:
+                res.append((L, R))
+        return res
 
-    rev_pattern = pattern[::-1]
-    rev_SA = SA[::-1]
+    if edits < D[i]:
+        return res
+
+    # deletion
+    recApproxSearch(pattern, i - 1, edits - 1, L, R, D, C, O, letters, res)
+
+    # I denne løkke opdaterer I L og R, men alle I skal jo starte fra det
+    # samme interval for hvert tegn!
+    oldL, oldR = L, R
+    for char in letters[1:]:
+        idx = letters.index(char)
+        # indeksering og dtype
+        L = C[char] + O[oldL, idx]
+        R = C[char] + O[oldR, idx]
+        if L < R:
+            # insert
+            recApproxSearch(pattern, i, edits - 1, L, R, D, C, O, letters, res)
+            if pattern[i] == char:
+                # match
+                recApproxSearch(pattern, i - 1, edits, L, R, D, C, O, letters, res)
+            else:
+                # substitution
+                recApproxSearch(pattern, i - 1, edits - 1, L, R, D, C, O, letters, res)
+
+    return res
 
 
 # A table with an entrance per index in the pattern, and at each index, we will record a lower bound in the number of edits we need.
-
-def d_table(pattern, c_table, ro_table, SA):
-    chars = list(c_table.keys())
+def d_table(pattern, c, ro, SA):
+    chars = list(c.keys())
     table = np.zeros(len(pattern))
     min_edits = 0
-    L = 1
-    R = len(SA)-1
+    L = 0
+    R = len(SA)
     for i in range(len(pattern)):
         char = pattern[i]
         idx = chars.index(char)
-        L = int(c_table[char] + ro_table[L-1, idx])
-        R = int(c_table[char] + ro_table[R, idx]-1)
-        if L > R:
+        L = c[char] + ro[L, idx]
+        R = c[char] + ro[R, idx]
+        if L >= R:
             min_edits += 1
-            L = 1
-            R = len(SA)-1
+            L = 0
+            R = len(SA)
         table[i] = min_edits
     return table
 
-"""
-def search(i, j, k, edits, start, v):
 
-    cigar = []
-    i = 0
-    j = 0
-    k = 0
+def cigar(intervals, input, pattern, SA, edits):
+    listOfCIGARS = []
+    for L, R in intervals:
+        for i in range(L, R):
+            temp = ""
+            searchIn = input[SA[i]:].decode()
+            for j,k in enumerate(difflib.ndiff(searchIn, pattern)):
 
-    if edits < 0:
-        return
-    if i == v:
-        handle_node(j, y, edits)
+                if k[0] == ' ':
+                    temp += "M"
+                elif k[0] == '+':
+                    temp += "I"
+                elif k[0] == '+':
+                    temp += "D"
+            listOfCIGARS.append(temp)
 
-    if x[i] == y[i]:
-        # match
-        cigar[k] = 'M'
-        search(i+1, j+1, k+1, edits, start, v)
-    else:
-        # substitute
-        cigar[k] = 'M'
-        search(i + 1, j + 1, k + 1, edits-1, start, v)
-
-    # try insertion
-    cigar[k] = 'I'
-    search(i+1, j, k+1, edits-1, start, v)
-
-    # try deletion
-    cigar[k] = 'D'
-    search(i, j, k + 1, edits - 1, start, v)
-
-
-def handle_node(j, x, edits):
-"""
+    return listOfCIGARS

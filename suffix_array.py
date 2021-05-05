@@ -21,7 +21,7 @@ def naive(input):
         suffix_array.append(idx)
 
     print("suffixes\n", suffixes)
-    return suffix_array
+    return suffixes
 
 """
     Skew implementation of suffix array creation
@@ -49,9 +49,6 @@ def skew(input):
 """
     SA-IS algorithm
 """
-
-
-
 
 
 def SA_IS(input, alphabetSize):
@@ -157,6 +154,7 @@ def findBucketSizesAndLetters(input, alphabetSize = 256):
     for char in input:
         ret[char] += 1
         if(letters.count(char) == 0):
+            # we want to know what letters we are working with
             letters.append(char)
 
     letters.sort()
