@@ -2,11 +2,11 @@ import suffix_array as sa
 import bwt
 import approx as app
 
-input = b"mississippi$"
+input = b"mmiissiissiippii$"
 # baabaabac$
 # gatgcgagagatg$
 # googol$
-input_search = "sippi"
+input_search = "misss"
 
 
 ExactSearch = False
@@ -65,7 +65,6 @@ else:
     for L, R in result:
         for i in range(L, R):
             print(i, SA[i], input[SA[i]:])
-    print(result)
 
     cigars = app.cigar(result, input, input_search, SA, edits)
     print("CIGARS\n", cigars)

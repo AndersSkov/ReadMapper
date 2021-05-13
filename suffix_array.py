@@ -21,6 +21,7 @@ def naive(input):
         suffix_array.append(idx)
 
     print("suffixes\n", suffixes)
+    print("naive", suffix_array)
     return suffixes
 
 """
@@ -186,6 +187,7 @@ def guessLMSsort(input, bucketSize, classes, letters):
     SA = [-1] * (len(input))
 
     tails = bucketTails(bucketSize)
+
     # bucket sort the LMS approx into the buckets
     for i in range (len(input)):
 
