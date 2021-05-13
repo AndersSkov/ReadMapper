@@ -75,7 +75,7 @@ def cigar(intervals, input, pattern, SA, edits):
     for L, R in intervals:
         for i in range(L, R):
             temp = ""
-            searchIn = input[SA[i]:].decode()
+            searchIn = input[SA[i]:]
             for j,k in enumerate(difflib.ndiff(searchIn, pattern)):
 
                 if k[0] == ' ':

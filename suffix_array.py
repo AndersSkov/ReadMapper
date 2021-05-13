@@ -450,7 +450,10 @@ def findBucketSizesAndLetters(input, alphabetSize = 256):
     ret = np.zeros(alphabetSize)
     letters = []
     for char in input:
-        ret[char] += 1
+        if type(char) == int:
+            ret[char] += 1
+        else:
+            ret[ord(char)] += 1
         if(letters.count(char) == 0):
             # we want to know what letters we are working with
             letters.append(char)

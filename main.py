@@ -2,7 +2,7 @@ import suffix_array as sa
 import bwt
 import approx as app
 
-input = b"mmiissiissiippii$"
+input = "mmiissiissiippii$"
 # baabaabac$
 # gatgcgagagatg$
 # googol$
@@ -35,7 +35,7 @@ print("BWT\n", our_bwt)
 if not ExactSearch:
     # Pas på her! I smidder sentinel i starten af strengen, og det må I ikke.
     # Den skal altid være til sidst.
-    rev_bwt = bwt.naive(input[-2::-1].decode() + '$')
+    rev_bwt = bwt.naive(input[-2::-1] + '$')
     print("BWT of REV INPUT\n", rev_bwt)
 
 

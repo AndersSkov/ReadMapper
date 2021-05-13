@@ -51,13 +51,13 @@ def bwtFromSA(input, SA):
             bwt += "$"
         else:
             inp = input[SA[i]-1]
-            bwt += chr(inp)
+            bwt += inp
     return bwt
 
 
 from collections import Counter
 def c_tabel(input):
-    counts = Counter(input.decode())
+    counts = Counter(input)
     c, accsum = {}, 0
     for k in sorted(counts):
         c[k] = accsum
