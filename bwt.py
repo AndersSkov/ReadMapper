@@ -1,3 +1,4 @@
+import suffix_array as sa
 import numpy as np
 
 def naive(input):

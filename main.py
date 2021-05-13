@@ -17,6 +17,11 @@ sa.naive(input)
 SA = sa.SA_IS(input, 256)
 print("SA-IS\n", SA)
 
+print("skew implementation of suffix array")
+suf, arr = sa.skew(input)
+print(suf)
+print(arr)
+
 # Det er temmeligt dumt at bruge en O(n² log n) algoritme
 # her, når I jo har et suffix array. Lad være med det!
 # Har I tested at I kan bygge BWT fra SA? (og faktisk behøver
@@ -97,4 +102,3 @@ def read_fasta_file(filename):
     for name, lines in sequences_lines.items():
         sequences[name] = ''.join(lines)
     return sequences
-

@@ -1,8 +1,14 @@
+
 import numpy as np
+from util import radix_sort, counting_sort
+import numpy as np
+from math import floor, ceil
 
 """
     Naive implementation of suffix array creation
 """
+
+
 def naive(input):
     # create all suffixes of input, and sort to array
     suffixes = []
@@ -21,34 +27,325 @@ def naive(input):
         suffix_array.append(idx)
 
     print("suffixes\n", suffixes)
-    print("naive", suffix_array)
-    return suffixes
+    print("suffix array\n", suffix_array)
+
+    return suffixes, suffix_array
+
 
 """
     Skew implementation of suffix array creation
 """
-def skew(input):
-    # create suffixes of input for idx % 3 != 0
-    suffixes_12 = []
+def skew(arg):
+    ##########################
+    # construct sa0 and sa12 #
+    ##########################
 
-    for i in range(len(input)):
+    sa0 = []
+    sa12 = []
+    for i in range(len(arg)):
         if i % 3 == 0:
+            sa0.append([i, arg[i:]])
+        else:
+            sa12.append([i, arg[i:]])
+
+    ##########################
+    #        sort sa12       #
+    ##########################
+
+    # sort sa12 by triplets
+    sa12_tri = [[s[0], s[1][:3]] if len(s[1]) >= 3 else [s[0], s[1] + '$' * (3-len(s[1]))] for s in sa12]
+    sa12_tri = radix_sort(sa12_tri)
+    # assign lex names to sorted triplets
+    sa12_lex_map = dict()
+    sa12_lex = []
+    lex = -1
+    prev = ""
+    unique = True
+    for s in sa12_tri:
+        if s[1] == prev:
+            unique = False
+            sa12_lex.append([s[0], lex])
             continue
-        suffixes_12.append(input[i:])
-    
-    print(suffixes_12)
-    
-    # sort by prefix triplet in linear time, using radix sort
-    
+        else:
+            lex += 1
+            sa12_lex_map[lex] = s[1]
+            sa12_lex.append([s[0], lex])
+            prev = s[1]
 
+    # check if triplets are unique
+    if unique:
+        # triplets are sorted, convert to sa12
+        sa12.clear()
+        for s in sa12_tri:
+            sa12.append([s[0], arg[s[0]:]])
+    else:
+        # create u string and sort recursively
+        sa12_tri_map = dict()
+        for s in sa12_lex:
+            sa12_tri_map[s[0]] = s[1]
 
+        u_f = ""
+        u_l = ""
+        l = len(arg)
+        for i in range(l):
+            if i % 3 == 0:
+                continue
+            elif i % 3 == 2:
+                u_f += str(sa12_tri_map[i])
+            elif i % 3 == 1:
+                u_l += str(sa12_tri_map[i])
+        u = u_f + "#" + u_l
+        u_suf, u_arr = skew(u)
 
+        # extract sorted sa12 from u string
+        extract = []
+        for s in u_suf:
+            tmp = ""
+            for c in s:
+                if c == "#":
+                    break
+                tmp += sa12_lex_map[int(c)]
+            if tmp == "":
+                continue
+            extract.append(tmp)
+        for i in range(len(extract)):
+            if extract[i].find('$') == -1: # no '$' in string
+                continue
+            extract[i] = extract[i][:extract[i].find('$')+1]
+        sa12.clear()
+        for s in extract:
+            sa12.append([len(arg) - len(s), s])
 
+    ##########################
+    #        sort sa0        #
+    ##########################
 
+    tmp = []
+    if (len(arg) - 1) % 3 == 0:
+        tmp.append(sa0[-1])
+    for s in sa12:
+        if (s[0]) % 3 == 1:
+            tmp.append([s[0] - 1, arg[s[0] - 1]  + s[1]])
+    sa0 = counting_sort(tmp, 0)
+
+    ##########################
+    #   merga sa0 and sa12   #
+    ##########################
+
+    i = j = 0
+    sa_idx = [s[0] for s in sa12]
+    res = []
+    while not (i == len(sa0) and j == len(sa12)):
+        if i == (len(sa0)):
+            for x in range(j, len(sa12)):
+                res.append([sa12[x][0], sa12[x][1]])
+            j = len(sa12)
+            continue
+        if j == (len(sa12)):
+            for x in range(i, len(sa0)):
+                res.append([sa0[x][0], sa0[x][1]])
+            i = len(sa0)
+            continue
+        sa0_char = sa0[i][1][0] 
+        sa12_char = sa12[j][1][0]
+        sa0_idx = sa12_idx = -1
+        # case 1: j mod 3 = 1
+        if sa12[j][0] % 3 == 1:
+            sa0_char = sa0[i][1][0]
+            sa12_char = sa12[j][1][0]
+            if ord(sa0_char) < ord(sa12_char):
+                res.append([sa0[i][0], sa0[i][1]])
+                i += 1
+                continue
+            elif ord(sa0_char) > ord(sa12_char):
+                res.append([sa12[j][0], sa12[j][1]])
+                j += 1
+                continue
+            sa0_idx = sa_idx.index(sa0[i][0] + 1)
+            sa12_idx = sa_idx.index(sa12[j][0] + 1)
+        # case 2: j mod 3 = 2
+        elif sa12[j][0] % 3 == 2:
+            sa0_char = sa0[i][1][0:2]
+            sa12_char = sa12[j][1][0:2]
+            if (ord(sa0_char[0]) < ord(sa12_char[0])) or (ord(sa0_char[0]) == ord(sa12_char[0]) and ord(sa0_char[1]) < ord(sa12_char[1])):
+                res.append([sa0[i][0], sa0[i][1]])
+                i += 1
+                continue
+            elif (ord(sa12_char[0]) < ord(sa0_char[0])) or (ord(sa12_char[0]) == ord(sa0_char[0]) and ord(sa12_char[1]) < ord(sa0_char[1])):
+                res.append([sa12[j][0], sa12[j][1]])
+                j += 1
+                continue
+            sa0_idx = sa_idx.index(sa0[i][0] + 2)
+            sa12_idx = sa_idx.index(sa12[j][0] + 2)
+        if sa0_idx < sa12_idx:
+            res.append([sa0[i][0], sa0[i][1]])
+            i += 1
+            continue
+        else:
+            res.append([sa12[j][0], sa12[j][1]])
+            j += 1
+            continue
+    suf = [s[1] for s in res]
+    suf_arr = [s[0] for s in res]
+    return suf, suf_arr
 
 
 """
-    SA-IS algorithm
+    Skew implementation of suffix array creation
+"""
+
+
+def screw(arg):
+    # construct sa0 and sa12 as 2d arrays to keep track of suffix and index
+    sa0 = []
+    sa12 = []
+    for idx in range(len(arg)):
+        if idx % 3 == 0:
+            sa0.append([idx, arg[idx:]])
+        else:
+            sa12.append([idx, arg[idx:]])
+    print("sa0:", sa0)
+    print("sa12:", sa12)
+    
+    
+    # sort sa12
+    sa12_tri = [[s[0], s[1][:3]] if len(s[1]) >= 3 else [s[0], s[1] + '$' * (3-len(s[1]))] for s in sa12]
+    print("sa12 triplets:", sa12_tri)
+    sa12_tri = radix_sort(sa12_tri)
+    print("sorted sa12 triplets", sa12_tri)
+    # assign lex_name to sorted triplets
+    sa12_lex_map = dict()
+    sa12_lex = []
+    lex = -1
+    prev = ""
+    done = True
+    for s in sa12_tri:
+        if s[1] == prev:
+            done = False
+            sa12_lex.append([s[0], lex])
+            continue
+        else:
+            lex += 1
+            sa12_lex_map[lex] = s[1]
+            sa12_lex.append([s[0], lex])
+            prev = s[1]
+    print("sa12_lex", sa12_lex)
+    # check if we are done with sa12
+    if done:
+        tmp = []
+        for s in sa12_tri:
+            tmp.append([s[0], arg[s[0]:]]) # this is not done, only tri is added
+        sa12 = tmp
+        print("sa12 with unique tri", sa12)
+    else:
+        # create u string
+        u_f = ""
+        u_l = ""
+        for s in sa12_lex[::-1]:
+            if s[0] % 3 == 2:
+                u_f += str(s[1])
+            else:
+                u_l += str(s[1])
+        u = u_f + "#" + u_l
+        u_f_arr = [u_f[i:] for i in range(0, len(u_f))]
+        u_l_arr = [u_l[i:] for i in range(0, len(u_l))]
+        u_arr = u_f_arr + u_l_arr
+        # append u_arr with sentinel
+        max_len = len((max(u_arr, key = len)))
+        u_arr = [s if len(s) == max_len else s + '$' * (max_len-len(s)) for s in u_arr]
+        # sort u_arr
+        zero_arr = [0 for _ in u_arr]
+        u_arr = list(zip(zero_arr, u_arr))
+        u_arr = radix_sort(u_arr) # this might need to be recursive
+        # extract sorted sa12
+        tmp = [""] * len(u_arr)
+        for i in range(len(u_arr)):
+            for s in u_arr[i][1]:
+                if s == "$":
+                    continue
+                tmp[i] += sa12_lex_map[int(s)]
+        # remove redundant '$' in tmp
+        for i in range(len(tmp)):
+            if tmp[i].find('$') == -1: # no '$' in string
+                continue
+            tmp[i] = tmp[i][:tmp[i].find('$')+1]
+        print(tmp)
+        # set sa12 to tmp, with indexes
+        sa12 = []
+        for s in tmp:
+            sa12.append([len(arg) - len(s), s])
+    # sort sa0 from sa12
+    tmp = []
+    for s in sa12:
+        if (s[0]) % 3 == 1:
+            tmp.append([s[0] - 1, arg[s[0] - 1]  + s[1]])
+    sa0 = counting_sort(tmp, 0)
+    print(sa0)
+    i = j = 0
+    sa_idx = [s[0] for s in sa12]
+    res = []
+    while not (i == len(sa0) and j == len(sa12)):
+        if i == (len(sa0)):
+            for x in range(j, len(sa12)):
+                res.append([ssa12[x][0], sa12[x][1]])
+            j = len(sa12)
+            continue
+        if j == (len(sa12)):
+            for x in range(i, len(sa0)):
+                res.append([sa0[x][0], sa0[x][1]])
+            i = len(sa0)
+            continue
+        sa0_char = sa0[i][1][0] 
+        sa12_char = sa12[j][1][0]
+        sa0_idx = sa12_idx = -1
+        # case 1: j mod 3 = 1
+        if sa12[j][0] % 3 == 1:
+            sa0_char = sa0[i][1][0]
+            sa12_char = sa12[j][1][0]
+            if ord(sa0_char) < ord(sa12_char):
+                res.append([sa0[i][0], sa0[i][1]])
+                i += 1
+                continue
+            elif ord(sa0_char) > ord(sa12_char):
+                res.append([sa12[j][0], sa12[j][1]])
+                j += 1
+                continue
+            sa0_idx = sa_idx.index(sa0[i][0] + 1)
+            sa12_idx = sa_idx.index(sa12[j][0] + 1)
+        # case 2: j mod 3 = 2
+        elif sa12[j][0] % 3 == 2:
+            sa0_char = sa0[i][1][0:2]
+            sa12_char = sa12[j][1][0:2]
+            if (ord(sa0_char[0]) < ord(sa12_char[0])) or (ord(sa0_char[0]) == ord(sa12_char[0]) and ord(sa0_char[1]) < ord(sa12_char[1])):
+                res.append([sa0[i][0], sa0[i][1]])
+                i += 1
+                continue
+            elif (ord(sa12_char[0]) < ord(sa0_char[0])) or (ord(sa12_char[0]) == ord(sa0_char[0]) and ord(sa12_char[1]) < ord(sa0_char[1])):
+                res.append([sa12[j][0], sa12[j][1]])
+                j += 1
+                continue
+            sa0_idx = sa_idx.index(sa0[i][0] + 2)
+            sa12_idx = sa_idx.index(sa12[j][0] + 2)
+        print(sa0_idx, sa12_idx)
+        if sa0_idx < sa12_idx:
+            res.append([sa0[i][0], sa0[i][1]])
+            i += 1
+            continue
+        else:
+            res.append([sa12[j][0], sa12[j][1]])
+            j += 1
+            continue
+    print("res", res)
+    suf = [s[1] for s in res]
+    suf_arr = [s[0] for s in res]
+    return suf, suf_arr
+                
+
+    
+
+
+"""
+    SA-IS implementation of suffix array creation
 """
 
 
@@ -353,4 +650,3 @@ def accLMSsort(input, bucketSizes, summarySA, sumOffset, letters):
 
     sufOff[0] = (len(input)-1)
     return sufOff
-
