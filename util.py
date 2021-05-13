@@ -8,7 +8,7 @@ def radix_sort(arr, l = -1):
     # sort by least to most significant idx in arr
     length = l
     if l == -1:
-        length = len(arr[0])-1
+        length = len(arr[0][1])-1
     for idx in range(length, -1, -1):
         arr = counting_sort(arr, idx)
     return arr

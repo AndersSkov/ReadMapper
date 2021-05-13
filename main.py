@@ -14,7 +14,9 @@ test_search = "gaga"
 #suffixes, suf_array = sa.naive(test)
 #
 print("skew implementation of suffix array")
-sa.skew(input_distinct)
+suf, arr = sa.skew(input)
+print(suf)
+print(arr)
 #
 #print("naive implementation of bwt")
 #our_bwt = bwt.naive(input)

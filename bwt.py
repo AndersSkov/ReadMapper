@@ -69,7 +69,6 @@ def c_tabel(input):
             c[chars[i]] = 0
         else:
             c[chars[i]] = (c[chars[i-1]] + temp[i-1][1])
-
     print(c)
     return c
 
@@ -81,7 +80,6 @@ def o_table(chars, bwt):
         idx = chars.index(bwt[i])
         for j in range(i,length_of_bwt):
             o[j][idx] += 1
-    
     print(o)
     return o
 
