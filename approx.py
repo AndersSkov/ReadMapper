@@ -16,9 +16,6 @@ def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, res):
     # vi får den forkerte værdi.
     if i < 0:
         if R > L and edits >= 0:
-            # I kan ikke returnerer lister af [L, R] når i laver en union. Det er jo
-            # intervaller I skal have styr på, så det er vigtigt hvad der er L og hvad
-            # der er R!
             if (L, R) not in res:
                 res.append((L, R))
         return res
@@ -51,21 +48,19 @@ def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, res):
 
 
 # A table with an entrance per index in the pattern, and at each index, we will record a lower bound in the number of edits we need.
-def d_table(pattern, c, ro, SA):
-    chars = list(c.keys())
+def d_table(pattern, c, ro, length_of_SA, idx_array):
     table = np.zeros(len(pattern))
     min_edits = 0
     L = 0
-    R = len(SA)
+    R = length_of_SA
     for i in range(len(pattern)):
         char = pattern[i]
-        idx = chars.index(char)
-        L = c[char] + ro[L, idx]
-        R = c[char] + ro[R, idx]
+        L = c[char] + ro[L, idx_array[char]]
+        R = c[char] + ro[R, idx_array[char]]
         if L >= R:
             min_edits += 1
             L = 0
-            R = len(SA)
+            R = length_of_SA
         table[i] = min_edits
     return table
 
@@ -77,7 +72,6 @@ def cigar(intervals, input, pattern, SA, edits):
             temp = ""
             searchIn = input[SA[i]:]
             for j,k in enumerate(difflib.ndiff(searchIn, pattern)):
-
                 if k[0] == ' ':
                     temp += "M"
                 elif k[0] == '+':

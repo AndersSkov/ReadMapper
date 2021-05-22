@@ -1,8 +1,5 @@
-
-import numpy as np
 from util import radix_sort, counting_sort
 import numpy as np
-from math import floor, ceil
 
 """
     Naive implementation of suffix array creation
@@ -25,9 +22,6 @@ def naive(input):
         # get idx of suffix from sorted array
         idx = len(input) - len(suffix)
         suffix_array.append(idx)
-
-    print("suffixes\n", suffixes)
-    print("suffix array\n", suffix_array)
 
     return suffixes, suffix_array
 
@@ -364,11 +358,12 @@ def SA_IS(input, alphabetSize):
     # when we have our LMS in place we can start to slot all the other suffixes in.
     # we start with L type suffixes
     induceSortL(input, guessedSA, bucketSizes, classes, letters)
-    # next up is S type suffixes which is not LMS.
+    # next up is S type suffixes
     induceSortS(input, guessedSA, bucketSizes, classes, letters)
 
-    # create a string that summarises the order of LMS in the guessedSA
+    # create a string that summarises the order of LMS substrings in the guessedSA
     sumString, sumAlphabet, sumOffset = summariseSA(input, guessedSA, classes)
+    print("SUMSTRING", sumString)
 
     # making a sorted SA of the summary string
     summarySA = sumSA(sumString, sumAlphabet)
@@ -640,7 +635,7 @@ def accLMSsort(input, bucketSizes, summarySA, sumOffset, letters):
     sufOff = [-1] * len(input)
 
     tails = bucketTails(bucketSizes)
-
+    print("SUMSA", summarySA)
     for i in range(len(summarySA)-1, 0, -1):
 
         inputIndex = sumOffset[summarySA[i]]

@@ -58,52 +58,41 @@ def bwtFromSA(input, SA):
 from collections import Counter
 def c_tabel(input):
     counts = Counter(input)
-    c, accsum = {}, 0
+    c, accsum, idx_array, i = {}, 0, {}, 0
     for k in sorted(counts):
         c[k] = accsum
+        idx_array[k] = i
         accsum += counts[k]
-    return c
+        i += 1
+    return c, idx_array
 
 
 def o_table(chars, bwt):
     num_of_chars = len(chars)
     length_of_bwt = len(bwt)
-    # Setter dtype her, istedet for at caste ved alle opslag
-    # Jeg har lavet tabellen en række længere for at gøre
-    # indekseringen nemmere. Det spilder lidt plads, men hvis det
-    # er et problem skal vi alligevel bruge en anden kodning af
-    # tabellen (wavelettræ og Jacobson's Rank).
-    o = np.zeros([length_of_bwt + 1, num_of_chars], dtype=int)
-    # Det her kører i kvadratisk tid. Det skal I have ned i lineær tid!
-    # I kan opdaterer hver indgang ved at kikke på den foregående, i stedet
-    # for at løbe hele resten af tabellen igennem.
-    for i in range(length_of_bwt):
-        idx = chars.index(bwt[i])
+    o = np.zeros([length_of_bwt + 1, num_of_chars], dtype=int )
+
+    for idx, char in enumerate(chars):
+        for i in range(1, length_of_bwt+1):
+            o[i, idx] = o[i-1, idx] + (bwt[i-1] == char)
+
+    """""
+    for idx, char in enumerate(chars):
         update_value = o[i, idx] + 1
         o[i+1:, idx] = update_value
-
+    """""
     return o
 
 
-def bwt_search(c, o, search):
-    chars = list(c.keys())
-    # Håndteringen af L og R bliver meget nemmere hvis man bruger
-    # den version fra min bog, så det har jeg skrevet det om til at gøre
+def bwt_search(c, o, search, idx_array):
     L, R = 0, o.shape[0] - 1
+
     for char in search[::-1]:
-        # tjek c og ikke chars; konstant tid vs linear
         if char not in c:
-            # Denne her hopper jo bare over ukendte tegn.
-            # Det er jo et mismatch, så I burde stoppe søgningen.
-            #continue
             return 0, 0
         if L > R:
             break
-        idx = chars.index(char) # linear søgning. Remap først eller noget.
-        # Jeg satte dtype for o-tabellen så det ikke er nødvendigt at bruge
-        # int() hver gang I slår op i den. Med den anden indeksering slipper vi
-        # for nogle off-by-one fejl, og håndteringen bliver symmetrisk.
-        L = c[char] + o[L, idx]
-        R = c[char] + o[R, idx]
+        L = c[char] + o[L, idx_array[char]]
+        R = c[char] + o[R, idx_array[char]]
 
-    return L, R # Nu returnerer vi et åbent interval
+    return L, R
