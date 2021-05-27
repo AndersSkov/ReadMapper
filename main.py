@@ -1,6 +1,8 @@
 import suffix_array as sa
 import bwt
 import approx as app
+import cProfile
+import re
 
 input = "mississippi$"
 # baabaabac$
@@ -14,7 +16,7 @@ ExactSearch = False
 
 sa.naive(input)
 
-SA = sa.SA_IS(input, 256)
+SA = sa.SA_IS(input)
 print("SA-IS\n", SA)
 
 print("skew implementation of suffix array")
@@ -59,7 +61,7 @@ else:
     L, R = 0, len(input)
     i = len(d)-1
     edits = 1
-    result = app.recApproxSearch(input_search, i, edits, L, R, d, c, o, list(c.keys()), [])
+    result = app.recApproxSearch(input_search, i, edits, L, R, d, c, o, list(c.keys()), idx_array, [])
     for L, R in result:
         for i in range(L, R):
             print(i, SA[i], input[SA[i]:])

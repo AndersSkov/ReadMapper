@@ -343,33 +343,32 @@ def screw(arg):
 """
 
 
-def SA_IS(input, alphabetSize):
+def SA_IS(input):
 
     # First up we determine the classes for every char in the input.
     classes = determineClasses(input)
     # the classes is stored as a bytearray
-
+    print("CLASSES", classes)
     # next up we will find the bucketsize
     bucketSizes, letters = findBucketSizesAndLetters(input)
-
     # we don't know where the LMS suffixes should go in our suffix array, so we make a guess
-    guessedSA = guessLMSsort(input, bucketSizes, classes, letters)
+    our_array = LMSsort(input, bucketSizes, classes, letters)
 
     # when we have our LMS in place we can start to slot all the other suffixes in.
     # we start with L type suffixes
-    induceSortL(input, guessedSA, bucketSizes, classes, letters)
+    induceSortL(input, our_array, bucketSizes, classes, letters)
     # next up is S type suffixes
-    induceSortS(input, guessedSA, bucketSizes, classes, letters)
+    induceSortS(input, our_array, bucketSizes, classes, letters)
 
-    # create a string that summarises the order of LMS substrings in the guessedSA
-    sumString, sumAlphabet, sumOffset = summariseSA(input, guessedSA, classes)
-    print("SUMSTRING", sumString)
+    # create a string that summarises the order of LMS substrings in our_array
+    reducedString, reducedAlphabet, reducedOffset = reduceSA(input, our_array, classes)
+    print("SUMSTRING", reducedString)
 
-    # making a sorted SA of the summary string
-    summarySA = sumSA(sumString, sumAlphabet)
+    # making a sorted SA of the reduced string
+    reducedSA = sortReducedSA(reducedString, reducedAlphabet)
 
-    # we are here using the SA of the summary string to determine where the LMS suffixes should be.
-    result = accLMSsort(input, bucketSizes, summarySA, sumOffset, letters)
+    # we are here using the SA of the reduced string to determine where the LMS suffixes should be.
+    result = accLMSsort(input, bucketSizes, reducedSA, reducedOffset, letters)
 
     # we again slot all the other suffixes in
     induceSortL(input, result, bucketSizes, classes, letters)
@@ -475,9 +474,9 @@ def bucketTails(bucketSizes):
     return ret
 
 
-# We make a suffix array with LMS-substrings approximately by guessing
+# We make a suffix array with LMS-substrings approximately by placing them at the end of their bucket
 # we guess where the LMS goes with a bucket sort
-def guessLMSsort(input, bucketSize, classes, letters):
+def LMSsort(input, bucketSize, classes, letters):
     # empty SA
     SA = [-1] * (len(input))
 
@@ -503,16 +502,16 @@ def guessLMSsort(input, bucketSize, classes, letters):
 
 # for each suffix in our guessed SA we check the suffix to the left in the original input, if it's L-type we bucket sort.
 # we scan from left to right
-def induceSortL(input, guessedSA, bucketSizes, classes, letters):
+def induceSortL(input, our_array, bucketSizes, classes, letters):
     heads = bucketHeads(bucketSizes)
 
-    for i in range(len(guessedSA)):
+    for i in range(len(our_array)):
         # if index = -1, we continue since no suffix is plotted yet here
-        if guessedSA[i] == -1:
+        if our_array[i] == -1:
             continue
 
         # we look at the suffix to the left
-        left = guessedSA[i]-1
+        left = our_array[i]-1
 
         if left < 0:
             continue
@@ -525,17 +524,17 @@ def induceSortL(input, guessedSA, bucketSizes, classes, letters):
         character = input[left]
         index = letters.index(character)
         # we now add the start position at the head of the bucket, and move the tail pointer one up
-        guessedSA[heads[index]] = left
+        our_array[heads[index]] = left
         heads[index] += 1
 
 
 # we now scan from right to left
 # basically a reversed version of the previous function
-def induceSortS(input, guessedSA, bucketSizes, classes, letters):
+def induceSortS(input, our_array, bucketSizes, classes, letters):
     tails = bucketTails(bucketSizes)
 
-    for i in range(len(guessedSA)-1,-1,-1):
-        left = guessedSA[i]-1
+    for i in range(len(our_array)-1,-1,-1):
+        left = our_array[i]-1
 
         if left < 0:
             continue
@@ -548,14 +547,14 @@ def induceSortS(input, guessedSA, bucketSizes, classes, letters):
         character = input[left]
         index = letters.index(character)
         # we now add the start position at the tail of the bucket, and move the tail pointer one down
-        guessedSA[tails[index]-1] = left
+        our_array[tails[index]-1] = left
         tails[index] -= 1
 
 
-# we here give each LMS a name based on the order the appear in the guessedSA
+# we here give each LMS a name based on the order the appear in the our array
 # if two LMS suffixes begin with the same LMS substring they get the same name
 # These names are combined in the same order as the corresponding suffixes in the original input.
-def summariseSA(input, guessedSA, classes):
+def reduceSA(input, our_array, classes):
 
     # create a empty list for names
     LMSnames = [-1] * len(input)
@@ -566,11 +565,11 @@ def summariseSA(input, guessedSA, classes):
     lastLMSSuffixOffset = None
 
     # we know that $ will always be at position 0
-    LMSnames[guessedSA[0]] = currName
-    lastLMSSuffixOffset = guessedSA[0]
+    LMSnames[our_array[0]] = currName
+    lastLMSSuffixOffset = our_array[0]
 
-    for i in range(1, len(guessedSA)):
-        suffOffset = guessedSA[i]
+    for i in range(1, len(our_array)):
+        suffOffset = our_array[i]
 
         if not isLeftMostSmallChar(suffOffset, classes):
             # is not an LMS suffix
@@ -587,58 +586,56 @@ def summariseSA(input, guessedSA, classes):
         LMSnames[suffOffset] = currName
 
     # LMSnames now contains all chars of the suffix string in correct order but also a lot of unused indecis we want to remove
-    # We also build sumSufOffset, which tells us which LMS suffix each item in the summary string represents
-    sumSufOffset = []
-    sumString = []
+    # We also build reducedSufOffset, which tells us which LMS suffix each item in the reduced string represents
+    reduceSufOffset = []
+    reducedString = []
 
     for index, name in enumerate(LMSnames):
         if name == -1:
             continue
 
-        sumSufOffset.append(index)
-        sumString.append(name)
+        reduceSufOffset.append(index)
+        reducedString.append(name)
 
     # the smallest is labeled 0 so we add one
-    sumAlphabetSize = currName + 1
+    reducedAlphabetSize = currName + 1
 
-    return sumString, sumAlphabetSize, sumSufOffset
+    return reducedString, reducedAlphabetSize, reduceSufOffset
 
 
-def sumSA(sumString, sumAlphabetSize):
+def sortReducedSA(reducedString, reducedAlphabetSize):
 
-    if sumAlphabetSize == len(sumString):
+    if reducedAlphabetSize == len(reducedString):
 
         # we can make the SA with a bucket sort
-        summarySA = [-1] * (len(sumString)+1)
+        reducedSA = [-1] * (len(reducedString)+1)
 
-        # we include $ at the beginning
-        summarySA[0] = len(sumString)
+        # we include $ at the beginning since its the smallest suffix
+        reducedSA[0] = len(reducedString)
 
-        for i in range(len(sumString)):
-
-            j = sumString[i]
-            summarySA[j+1] = i
+        for i in range(len(reducedString)):
+            j = reducedString[i]
+            reducedSA[j+1] = i
 
     else:
-        # the summary string is too complex
+        # the reduced string is too complex
         # there is at least one letter used more than once, so we can't just bucket sort it, since we don't know where it will go then.
         # recursive
-        summarySA = SA_IS(sumString, sumAlphabetSize)
-
-    return summarySA
+        reducedSA = SA_IS(reducedString, reducedAlphabetSize)
+    print("REDUCEDSA", reducedSA)
+    return reducedSA
 
 
 # final SA
-# we again place LMS suffixes in with bucket sort, but this time not at random. We use the order determined by the summarySA
-def accLMSsort(input, bucketSizes, summarySA, sumOffset, letters):
+# we again place LMS suffixes in with bucket sort, but this time not at random. We use the order determined by the reducedSA
+def accLMSsort(input, bucketSizes, reducedSA, reducedOffset, letters):
 
     sufOff = [-1] * len(input)
 
     tails = bucketTails(bucketSizes)
-    print("SUMSA", summarySA)
-    for i in range(len(summarySA)-1, 0, -1):
+    for i in range(len(reducedSA)-1, 0, -1):
 
-        inputIndex = sumOffset[summarySA[i]]
+        inputIndex = reducedOffset[reducedSA[i]]
 
         bIndex = input[inputIndex]
         index = letters.index(bIndex)
