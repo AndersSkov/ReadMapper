@@ -1,5 +1,6 @@
-import suffix_array as sa
 import numpy as np
+import psutil
+
 
 def naive(input):
     length = len(input)
@@ -81,6 +82,7 @@ def o_table(chars, bwt):
         update_value = o[i, idx] + 1
         o[i+1:, idx] = update_value
     """""
+
     return o
 
 

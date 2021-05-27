@@ -1,4 +1,6 @@
-from util import radix_sort, counting_sort
+import psutil as psutil
+
+from data.python_code.util import radix_sort, counting_sort
 import numpy as np
 
 """
@@ -343,14 +345,14 @@ def screw(arg):
 """
 
 
-def SA_IS(input):
-
+def SA_IS(input, alphabetSize):
     # First up we determine the classes for every char in the input.
     classes = determineClasses(input)
     # the classes is stored as a bytearray
-    print("CLASSES", classes)
+
     # next up we will find the bucketsize
-    bucketSizes, letters = findBucketSizesAndLetters(input)
+    bucketSizes, letters = findBucketSizesAndLetters(input, alphabetSize)
+
     # we don't know where the LMS suffixes should go in our suffix array, so we make a guess
     our_array = LMSsort(input, bucketSizes, classes, letters)
 
@@ -362,7 +364,6 @@ def SA_IS(input):
 
     # create a string that summarises the order of LMS substrings in our_array
     reducedString, reducedAlphabet, reducedOffset = reduceSA(input, our_array, classes)
-    print("SUMSTRING", reducedString)
 
     # making a sorted SA of the reduced string
     reducedSA = sortReducedSA(reducedString, reducedAlphabet)
@@ -622,7 +623,6 @@ def sortReducedSA(reducedString, reducedAlphabetSize):
         # there is at least one letter used more than once, so we can't just bucket sort it, since we don't know where it will go then.
         # recursive
         reducedSA = SA_IS(reducedString, reducedAlphabetSize)
-    print("REDUCEDSA", reducedSA)
     return reducedSA
 
 
