@@ -1,29 +1,29 @@
 from data.python_code import bwt, approx as app, suffix_array as sa
 
 def main():
-    input = "mmiissiissiippii$"
+    input = "mississippi$"
     # baabaabac$
     # gatgcgagagatg$
     # googol$
-    input_search = "isip"
+    input_search = "sip"
 
 
-    ExactSearch = False
+    ExactSearch = True
 
 
     sa.naive(input)
 
     SA = sa.SA_IS(input, 256)
-    #print("SA-IS\n", SA)
+    print("SA-IS\n", SA)
 
     print("skew implementation of suffix array")
-    suf, arr = sa.skew(input)
-    #print(suf)
+    #suf, arr = sa.skew(input)
+    #(suf)
     #print(arr)
 
 
     our_bwt = bwt.bwtFromSA(input, SA)
-    #print("BWT\n", our_bwt)
+    print("BWT\n", our_bwt)
 
     if not ExactSearch:
         rev_bwt = bwt.naive(input[-2::-1] + '$')

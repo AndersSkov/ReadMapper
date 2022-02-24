@@ -8,15 +8,14 @@ import difflib
 # We will be searching from beginning to end in the SA of the reversed string and searching for the reversed pattern
 def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, idx_array, res):
     if i < 0:
-        if L < R and edits >= 0:
-            if (L, R) not in res:
-                res.append((L, R))
+        if edits >= 0:
+            res.append((L, R))
         return res
 
     if edits < D[i]:
         return res
 
-    # deletion
+    # insertion
     recApproxSearch(pattern, i - 1, edits - 1, L, R, D, C, O, letters, idx_array, res)
 
     oldL, oldR = L, R
@@ -24,7 +23,7 @@ def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, idx_array, res):
         L = C[char] + O[oldL, idx_array[char]]
         R = C[char] + O[oldR, idx_array[char]]
         if L < R:
-            # insert
+            # deletion
             recApproxSearch(pattern, i, edits - 1, L, R, D, C, O, letters, idx_array, res)
             if pattern[i] == char:
                 # match
@@ -32,13 +31,12 @@ def recApproxSearch(pattern, i, edits, L, R, D, C, O, letters, idx_array, res):
             else:
                 # substitution
                 recApproxSearch(pattern, i - 1, edits - 1, L, R, D, C, O, letters, idx_array, res)
-
     return res
 
 
 # A table with an entrance per index in the pattern, and at each index, we will record a lower bound in the number of edits we need.
 def d_table(pattern, c, ro, length_of_SA, idx_array):
-    table = np.zeros(len(pattern))
+    table = np.zeros(len(pattern), dtype=int)
     min_edits = 0
     L = 0
     R = length_of_SA
@@ -46,7 +44,7 @@ def d_table(pattern, c, ro, length_of_SA, idx_array):
         char = pattern[i]
         L = c[char] + ro[L, idx_array[char]]
         R = c[char] + ro[R, idx_array[char]]
-        if L >= R:
+        if R <= L:
             min_edits += 1
             L = 0
             R = length_of_SA
@@ -54,6 +52,9 @@ def d_table(pattern, c, ro, length_of_SA, idx_array):
     return table
 
 
+"""
+CIGAR string generator doesn't work
+"""
 def cigar(intervals, input, pattern, SA, edits):
     listOfCIGARS = []
     for L, R in intervals:

@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1580794172324.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2167478242",
+    "id" : "CDA91A22",
+    "lastKnownWriteTime" : 1580796973,
+    "last_content_update" : 1580796973462,
+    "path" : "~/Projects/stralg/tools/readmappers/data/compare-performance.R",
+    "project_path" : "compare-performance.R",
+    "properties" : {
+        "cursorPosition" : "35,0",
+        "scrollLine" : "1",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,4 +1,4 @@
-import psutil as psutil
+
 
 from data.python_code.util import radix_sort, counting_sort
 import numpy as np
@@ -24,8 +24,8 @@ def naive(input):
         # get idx of suffix from sorted array
         idx = len(input) - len(suffix)
         suffix_array.append(idx)
-
-    return suffixes, suffix_array
+    print("suffixes", suffixes)
+    return suffix_array
 
 
 """
@@ -348,26 +348,21 @@ def screw(arg):
 def SA_IS(input, alphabetSize):
     # First up we determine the classes for every char in the input.
     classes = determineClasses(input)
-    # the classes is stored as a bytearray
 
     # next up we will find the bucketsize
     bucketSizes, letters = findBucketSizesAndLetters(input, alphabetSize)
 
-    # we don't know where the LMS suffixes should go in our suffix array, so we make a guess
+    # we don't know where the LMS suffixes should go in our suffix array, so we place them at the end of their buckets
     our_array = LMSsort(input, bucketSizes, classes, letters)
-
     # when we have our LMS in place we can start to slot all the other suffixes in.
     # we start with L type suffixes
     induceSortL(input, our_array, bucketSizes, classes, letters)
     # next up is S type suffixes
     induceSortS(input, our_array, bucketSizes, classes, letters)
-
     # create a string that summarises the order of LMS substrings in our_array
     reducedString, reducedAlphabet, reducedOffset = reduceSA(input, our_array, classes)
-
     # making a sorted SA of the reduced string
     reducedSA = sortReducedSA(reducedString, reducedAlphabet)
-
     # we are here using the SA of the reduced string to determine where the LMS suffixes should be.
     result = accLMSsort(input, bucketSizes, reducedSA, reducedOffset, letters)
 
@@ -379,12 +374,11 @@ def SA_IS(input, alphabetSize):
 
 
 def determineClasses(input):
-
     L = ord("L")
     S = ord("S")
 
     # create empty list to fill with L and S
-    ret = bytearray(len(input))
+    ret = [-1]*len(input)
 
     #the last char $ is always S
     ret[-1] = S
@@ -423,7 +417,7 @@ def isLMSsubstringEqual(input, classes, offsetA, offsetB):
         aLMS = isLeftMostSmallChar(i+offsetA, classes)
         bLMS = isLeftMostSmallChar(i+offsetB, classes)
 
-        # true if we have found the start of the next LMS substring
+        # true if we have found the start of the next LMS substring for both
         if(i>0 and aLMS and bLMS):
             # we have gone through the original LMS substrings without finding differences
             return True
@@ -443,58 +437,56 @@ def findBucketSizesAndLetters(input, alphabetSize = 256):
     # create a 0 list for the given alphabet size
     # if no size is entered 256 is used as the full range for all characters available from a byte.
     ret = np.zeros(alphabetSize)
-    letters = []
     for char in input:
         if type(char) == int:
             ret[char] += 1
         else:
             ret[ord(char)] += 1
-        if(letters.count(char) == 0):
-            # we want to know what letters we are working with
-            letters.append(char)
 
-    letters.sort()
+    letters = list(np.nonzero(ret)[0])
+    if type(input[0]) == str:
+        letters = list(map(chr, letters))
+
     return ret[ret != 0], letters
 
 
-def bucketHeads(bucketSizes):
+def bucketBeginnings(bucketSizes, letters):
     offset = 0
-    ret = []
-    for size in bucketSizes:
-        ret.append(offset)
+    ret = {}
+    for size, l in zip(bucketSizes, letters):
+        ret[l] = offset
         offset += int(size)
     return ret
 
 
-def bucketTails(bucketSizes):
+def bucketEnds(bucketSizes, letters):
     offset = 0
-    ret = []
-    for size in bucketSizes:
+    ret = {}
+    for size, l in zip(bucketSizes, letters):
         offset += int(size)
-        ret.append(offset)
+        ret[l] = offset
     return ret
 
 
 # We make a suffix array with LMS-substrings approximately by placing them at the end of their bucket
 # we guess where the LMS goes with a bucket sort
 def LMSsort(input, bucketSize, classes, letters):
+    length = len(input)
     # empty SA
-    SA = [-1] * (len(input))
+    SA = [-1] * length
 
-    tails = bucketTails(bucketSize)
+    ends = bucketEnds(bucketSize, letters)
 
     # bucket sort the LMS approx into the buckets
-    for i in range (len(input)):
-
+    for i in range(length):
         # if not LMS, continue
         if not isLeftMostSmallChar(i, classes):
             continue
         # find the index of the character in buckets
         character = input[i]
-        index = letters.index(character)
         # we now add the start position at the tail of the bucket, and move the tail pointer one down
-        SA[tails[index]] = i
-        tails[index] -= 1
+        SA[ends[character]] = i
+        ends[character] -= 1
 
     SA.append(SA.pop(0))
 
@@ -504,7 +496,7 @@ def LMSsort(input, bucketSize, classes, letters):
 # for each suffix in our guessed SA we check the suffix to the left in the original input, if it's L-type we bucket sort.
 # we scan from left to right
 def induceSortL(input, our_array, bucketSizes, classes, letters):
-    heads = bucketHeads(bucketSizes)
+    beginnings = bucketBeginnings(bucketSizes, letters)
 
     for i in range(len(our_array)):
         # if index = -1, we continue since no suffix is plotted yet here
@@ -514,59 +506,46 @@ def induceSortL(input, our_array, bucketSizes, classes, letters):
         # we look at the suffix to the left
         left = our_array[i]-1
 
-        if left < 0:
+        if left < 0 or classes[left] != ord("L"):
             continue
 
-        if classes[left] != ord("L"):
-            # we are only interested in L types
-            continue
-
-        # which bucket should we use
         character = input[left]
-        index = letters.index(character)
         # we now add the start position at the head of the bucket, and move the tail pointer one up
-        our_array[heads[index]] = left
-        heads[index] += 1
+        our_array[beginnings[character]] = left
+        beginnings[character] += 1
 
 
 # we now scan from right to left
 # basically a reversed version of the previous function
 def induceSortS(input, our_array, bucketSizes, classes, letters):
-    tails = bucketTails(bucketSizes)
+    ends = bucketEnds(bucketSizes, letters)
 
     for i in range(len(our_array)-1,-1,-1):
         left = our_array[i]-1
 
-        if left < 0:
+        if left < 0 or classes[left] != ord("S"):
             continue
 
-        if classes[left] != ord("S"):
-            # we only look for S types
-            continue
-
-        # which bucket should we use
         character = input[left]
-        index = letters.index(character)
         # we now add the start position at the tail of the bucket, and move the tail pointer one down
-        our_array[tails[index]-1] = left
-        tails[index] -= 1
+        our_array[ends[character]-1] = left
+        ends[character] -= 1
 
 
 # we here give each LMS a name based on the order the appear in the our array
 # if two LMS suffixes begin with the same LMS substring they get the same name
 # These names are combined in the same order as the corresponding suffixes in the original input.
 def reduceSA(input, our_array, classes):
-
     # create a empty list for names
-    LMSnames = [-1] * len(input)
+    LMS_array = [-1] * len(input)
 
     currName = 0
 
-    # we keep track of where the last LMS we checked was in the original input
+    # we keep track of the last LMS so we know if two are equal
     lastLMSSuffixOffset = None
 
     # we know that $ will always be at position 0
-    LMSnames[our_array[0]] = currName
+    LMS_array[our_array[0]] = currName
     lastLMSSuffixOffset = our_array[0]
 
     for i in range(1, len(our_array)):
@@ -584,24 +563,14 @@ def reduceSA(input, our_array, classes):
         lastLMSSuffixOffset = suffOffset
 
         # store the name in the empty list in the same place as it occurs in the original input
-        LMSnames[suffOffset] = currName
+        LMS_array[suffOffset] = currName
 
-    # LMSnames now contains all chars of the suffix string in correct order but also a lot of unused indecis we want to remove
-    # We also build reducedSufOffset, which tells us which LMS suffix each item in the reduced string represents
-    reduceSufOffset = []
-    reducedString = []
-
-    for index, name in enumerate(LMSnames):
-        if name == -1:
-            continue
-
-        reduceSufOffset.append(index)
-        reducedString.append(name)
 
     # the smallest is labeled 0 so we add one
     reducedAlphabetSize = currName + 1
+    reducedOffset, reducedSA_array = zip(*[(idx, val) for idx, val in enumerate(LMS_array) if val > -1])
 
-    return reducedString, reducedAlphabetSize, reduceSufOffset
+    return reducedSA_array, reducedAlphabetSize, reducedOffset
 
 
 def sortReducedSA(reducedString, reducedAlphabetSize):
@@ -626,22 +595,21 @@ def sortReducedSA(reducedString, reducedAlphabetSize):
     return reducedSA
 
 
-# final SA
-# we again place LMS suffixes in with bucket sort, but this time not at random. We use the order determined by the reducedSA
+# start of final SA
+# we again place LMS suffixes in buckets, but this time not at random. We use the order determined by the reducedSA
 def accLMSsort(input, bucketSizes, reducedSA, reducedOffset, letters):
 
     sufOff = [-1] * len(input)
 
-    tails = bucketTails(bucketSizes)
+    ends = bucketEnds(bucketSizes, letters)
     for i in range(len(reducedSA)-1, 0, -1):
 
         inputIndex = reducedOffset[reducedSA[i]]
 
-        bIndex = input[inputIndex]
-        index = letters.index(bIndex)
+        char = input[inputIndex]
 
-        sufOff[(tails[index]-1)] = inputIndex
-        tails[index] -= 1
+        sufOff[(ends[char]-1)] = inputIndex
+        ends[char] -= 1
 
     sufOff[0] = (len(input)-1)
     return sufOff

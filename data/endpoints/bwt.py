@@ -1,4 +1,6 @@
 import sys
+import cProfile
+import tracemalloc
 
 from data.python_code.bwt import bwtFromSA, c_tabel, o_table, bwt_search
 from data.python_code.suffix_array import SA_IS
@@ -15,6 +17,7 @@ def now():
     fasta_str = fasta[" chr1"] + "$"
 
     SA = SA_IS(fasta_str, 256)
+
     BWT = bwtFromSA(fasta_str, SA)
     C, idx_array = c_tabel(fasta_str)
     O = o_table(list(C.keys()), BWT)
@@ -22,11 +25,14 @@ def now():
     read_path = sys.argv[2]
     reads = read_fastq_file(read_path)
 
+    matches = 0
     for i in range(len(reads)):
-        print(f"Searching for {reads[i]}")
+        #print(f"Searching for {reads[i]}")
         L, R = bwt_search(C, O, reads[i], idx_array)
         for j in range(L, R):
-            print(j, SA[j], fasta_str[SA[j]: SA[j]+len(reads[i])])
+            matches += 1
+            #print(j, SA[j], fasta_str[SA[j]: SA[j]+len(reads[i])])
+    print("MATCHES", matches)
 
 if __name__ == '__main__':
-    now()
+    cProfile.run('now()')

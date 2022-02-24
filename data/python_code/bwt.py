@@ -1,5 +1,4 @@
 import numpy as np
-import psutil
 
 
 def naive(input):
@@ -76,12 +75,6 @@ def o_table(chars, bwt):
     for idx, char in enumerate(chars):
         for i in range(1, length_of_bwt+1):
             o[i, idx] = o[i-1, idx] + (bwt[i-1] == char)
-
-    """""
-    for idx, char in enumerate(chars):
-        update_value = o[i, idx] + 1
-        o[i+1:, idx] = update_value
-    """""
 
     return o
 

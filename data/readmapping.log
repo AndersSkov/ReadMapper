@@ -1,0 +1,6 @@
+python3 endpoints/bwa.py genomes/hg38-1000.fa reads/reads-100-10-0.fq
+python3 endpoints/bwt.py genomes/hg38-1000.fa reads/reads-100-10-0.fq
+python3 endpoints/bwa.py genomes/hg38-1000.fa reads/reads-100-10-1.fq
+python3 endpoints/bwt.py genomes/hg38-1000.fa reads/reads-100-10-1.fq
+python3 endpoints/bwa.py genomes/hg38-1000.fa reads/reads-100-100-1.fq
+python3 endpoints/bwt.py genomes/hg38-1000.fa reads/reads-100-100-1.fq

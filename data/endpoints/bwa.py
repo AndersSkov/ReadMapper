@@ -1,4 +1,7 @@
+import cProfile
 import sys
+import numpy as np
+from datetime import datetime
 
 from data.python_code.approx import d_table, recApproxSearch
 from data.python_code.bwt import bwtFromSA, c_tabel, o_table
@@ -23,19 +26,26 @@ def now():
     C, idx_array = c_tabel(fasta_str)
     O = o_table(list(C.keys()), BWT)
     RO = o_table(list(C.keys()), REV_BWT)
+    length_of_SA = SA[0]+1
 
     reads = read_fastq_file(reads_path)
-
+    matches = 0
+    #now = datetime.now().time()
+    #print("Start time", now)
+    D1 = np.zeros(len(reads[0]))
     for j in range(len(reads)):
-        D = d_table(reads[j], C, RO, SA[0]+1, idx_array)
-        L, R = 0, SA[0]+1
-        i = len(D)-1
-        edits = 1
-        result = recApproxSearch(reads[j], i, edits, L, R, D, C, O, list(C.keys()), idx_array, [])
+        #D2 = d_table(reads[j], C, RO, length_of_SA, idx_array)
+        L, R = 0, length_of_SA
+        i = len(D1)-1
+        edits = 0
+        result = recApproxSearch(reads[j], i, edits, L, R, D1, C, O, list(C.keys()), idx_array, [])
         for L, R in result:
             for k in range(L, R):
-                print(k, SA[k], fasta_str[SA[k]: SA[k]+len(reads[j])+edits])
-
+                matches += 1
+                #print(k, SA[k], fasta_str[SA[k]: SA[k]+len(reads[j])+edits])
+        #now = datetime.now().time()
+        #print(f"time at iteration {j}:", now)
+    print("MATCHES", matches)
 
 if __name__ == '__main__':
-    now()
+    cProfile.run('now()')
